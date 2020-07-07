@@ -106,3 +106,7 @@ dmypy.json
 #PyCharm
 .idea/
 venv/
+
+
+# sqlite3
+*.db
