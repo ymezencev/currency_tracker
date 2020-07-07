@@ -1,6 +1,6 @@
 from peewee import (SqliteDatabase, Model, IntegerField, DoubleField, DateTimeField, datetime as peewee_datetime)
-
-db = SqliteDatabase("currency_tracker.db")
+import config
+db = SqliteDatabase(config.DB_NAME)
 
 
 class CurrencyRate(Model):
