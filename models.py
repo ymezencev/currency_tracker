@@ -20,6 +20,7 @@ class CurrencyRate(_Model):
     to_currency = IntegerField()
     rate = DoubleField()
     dt_updated = DateTimeField(default=peewee_datetime.datetime.now)
+    module = CharField(max_length=100)
 
     def __str__(self):
         return "CurrencyRate(%s=>%s): %s" % (self.from_currency, self.to_currency, self.rate)
@@ -54,8 +55,10 @@ class ErrorLog(_Model):
 def init_db():
     CurrencyRate.drop_table()
     CurrencyRate.create_table()
-    CurrencyRate.create(from_currency=840, to_currency=980, rate=1)
-    CurrencyRate.create(from_currency=840, to_currency=643, rate=1)
+    CurrencyRate.create(from_currency=840, to_currency=643, rate=1, module="privat_api")
+    CurrencyRate.create(from_currency=840, to_currency=980, rate=1, module="cbr_api")
+    CurrencyRate.create(from_currency=1000, to_currency=840, rate=1, module="privat_api")
+    CurrencyRate.create(from_currency=960, to_currency=1000, rate=1, module="cryptonator_api")
 
     for m in (ApiLog, ErrorLog):
         m.drop_table()

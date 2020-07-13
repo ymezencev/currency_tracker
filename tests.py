@@ -2,10 +2,7 @@ import unittest
 import json
 from unittest.mock import patch
 import requests
-
 import models
-import test_api
-from api import cbr_api, privat_api
 import api
 
 
@@ -24,19 +21,12 @@ class Test(unittest.TestCase):
     def setUp(self):  # запускается перед каждым вызовом test_..
         models.init_db()
 
-    def test_main(self):
+    def test_privat_usd(self):
         currency_rate = models.CurrencyRate.get(id=1)
         self.assertEqual(currency_rate.rate, 1.0)
-        test_api.update_currency_rate(840, 980)
+        api.update_rate(840, 643)
         currency_rate = models.CurrencyRate.get(id=1)
-        self.assertEqual(currency_rate.rate, 1.01)
-
-    def test_privat(self):
-        currency_rate = models.CurrencyRate.get(id=1)
-        self.assertEqual(currency_rate.rate, 1.0)
-        privat_api.Api().update_rate(840, 980)
-        currency_rate = models.CurrencyRate.get(id=1)
-        self.assertGreater(currency_rate.rate, 25) # проверим, что курс больше 25
+        self.assertGreater(currency_rate.rate, 25)  # проверим, что курс больше 25
 
         api_log = models.ApiLog.select().order_by(models.ApiLog.created.desc()).first()
         self.assertIsNotNone(api_log)
@@ -45,12 +35,24 @@ class Test(unittest.TestCase):
 
         self.assertIn('{"ccy":"USD","base_ccy":"UAH"', api_log.response_text)
 
-    def test_cbr(self):
-        currency_rate = models.CurrencyRate.get(id=1)
+    def test_privat_btc(self):
+        currency_rate = models.CurrencyRate.get(from_currency=1000, to_currency=840)
         self.assertEqual(currency_rate.rate, 1.0)
-        cbr_api.Api().update_rate(840, 980)
-        currency_rate = models.CurrencyRate.get(id=1)
-        self.assertGreater(currency_rate.rate, 60) # проверим, что курс больше 60
+        api.update_rate(1000, 840)
+        currency_rate = models.CurrencyRate.get(from_currency=1000, to_currency=840)
+        self.assertGreater(currency_rate.rate, 5000)  # проверим, что курс больше 25
+
+        api_log = models.ApiLog.select().order_by(models.ApiLog.created.desc()).first()
+        self.assertIsNotNone(api_log)
+        self.assertEqual(api_log.request_url, "https://api.privatbank.ua/p24api/pubinfo?exchange&json&coursid=11")
+        self.assertIsNotNone(api_log.response_text)
+
+    def test_cbr(self):
+        currency_rate = models.CurrencyRate.get(from_currency=840, to_currency=980)
+        self.assertEqual(currency_rate.rate, 1.0)
+        api.update_rate(840, 980)
+        currency_rate = models.CurrencyRate.get(from_currency=840, to_currency=980)
+        self.assertGreater(currency_rate.rate, 25)  # проверим, что курс больше 60
 
         api_log = models.ApiLog.select().order_by(models.ApiLog.created.desc()).first()
         self.assertIsNotNone(api_log)
@@ -66,7 +68,7 @@ class Test(unittest.TestCase):
         updated_before = currency_rate.dt_updated
         self.assertEqual(currency_rate.rate, 1.0)
 
-        privat_api.Api().update_rate(840, 980)
+        api.update_rate(840, 643)
 
         currency_rate = models.CurrencyRate.get(id=1)
         updated_after = currency_rate.dt_updated
@@ -88,7 +90,7 @@ class Test(unittest.TestCase):
         updated_before = currency_rate.dt_updated
         self.assertEqual(currency_rate.rate, 1.0)
 
-        self.assertRaises(requests.exceptions.RequestException, privat_api.Api().update_rate, 840, 980)
+        self.assertRaises(requests.exceptions.RequestException, api.update_rate, 840, 643)
         currency_rate = models.CurrencyRate.get(id=1)
         updated_after = currency_rate.dt_updated
 
@@ -111,3 +113,19 @@ class Test(unittest.TestCase):
 
         api.HTTP_TIMEOUT = 15
 
+    def test_cryptonator_api(self):
+        currency_rate = models.CurrencyRate().get(from_currency=960, to_currency=1000)
+        updated_before = currency_rate.dt_updated
+        self.assertEqual(currency_rate.rate, 1.0)
+
+        api.update_rate(960, 1000)
+
+        currency_rate = models.CurrencyRate.get(from_currency=960, to_currency=1000)
+        updated_after = currency_rate.dt_updated
+
+        self.assertGreater(currency_rate.rate, 1000.0)
+        self.assertGreater(updated_after, updated_before)
+
+        api_log = models.ApiLog.select().order_by(models.ApiLog.created.desc()).first()
+        self.assertIsNotNone(api_log)
+        self.assertIsNotNone(api_log.response_text)

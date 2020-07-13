@@ -1,8 +1,17 @@
 import requests
 import traceback
+import importlib
+
 import xml.etree.ElementTree as ET
 from models import CurrencyRate, ApiLog, ErrorLog, peewee_datetime
 from config import logging, LOGGER_CONFIG, HTTP_TIMEOUT
+
+
+def update_rate(from_currency, to_currency):
+    currency_rate = CurrencyRate.select().where(CurrencyRate.from_currency == from_currency,
+                                                CurrencyRate.to_currency == to_currency).first()
+    module = importlib.import_module("api.{}".format(currency_rate.module))
+    module.Api().update_rate(currency_rate.from_currency, to_currency)
 
 
 class _Api:

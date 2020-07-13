@@ -21,10 +21,13 @@ class Api(_Api):
         return usd_rate
 
     def _find_rate(self, response_json, from_currency):
-        privat_valute_map = {840: 'USD', 960: 'RUB'}
+        privat_aliases_map = {840: 'USD', 960: 'RUB', 1000: "BTC"}
+        if from_currency not in privat_aliases_map:
+            raise ValueError("Invalid from currency {}".format(from_currency))
 
+        currency_alias = privat_aliases_map[from_currency]
         for value in response_json:
-            if value["ccy"] == privat_valute_map[from_currency]:
+            if value["ccy"] == currency_alias:
                 return float(value["sale"])
-        self.log.error("Invalid Privat response: Currency {} not found".format(privat_valute_map[from_currency]))
-        raise ValueError("Invalid Privat response: Currency {} not found".format(privat_valute_map[from_currency]))
+        self.log.error("Invalid Privat response: Currency {} not found".format(currency_alias))
+        raise ValueError("Invalid Privat response: Currency {} not found".format(currency_alias))
