@@ -5,6 +5,7 @@ from unittest.mock import patch
 import requests
 import models
 import api
+import xml.etree.ElementTree as ET
 
 
 def get_privat_response(*args, **kwargs):
@@ -146,11 +147,20 @@ class Test(unittest.TestCase):
             self.assertIn("to", rate)
             self.assertIn("rate", rate)
 
-
+    @unittest.skip("skip")
     def test_api_xml(self):
        r = requests.get("http://127.0.0.1:15005/api/rates/xml")
        xml_rates = xmltodict.parse(r.text)
        self.assertIsInstance(xml_rates["currency_rates"]["currency_rate"], list)
+
+
+    def test_html_currency_rates(self):
+        r = requests.get("http://127.0.0.1:15005/currency_rates")
+        self.assertTrue(r.ok)
+        root = ET.fromstring(r.text)
+        body = root.find("body")
+        self.assertIsNotNone(body)
+
 
 if __name__ =="__main__" :
     unittest.main()

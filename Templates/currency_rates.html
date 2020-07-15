@@ -11,13 +11,17 @@
 
     <table border="1">
         <thead align="center">
-            <td>From</td><td>To</td><td>Rate</td>
+            <td>From</td><td>To</td><td>Updated</td><td>Rate</td><td><a href="{{url_for('update_rates')}}">Update All</a></td>
         </thead>
         {% for rate in currency_rate %}
         <tr align="center">
             <td>{{rate.from_currency}}</td>
             <td>{{rate.to_currency}}</td>
+            <td>{{rate.dt_updated}}</td>
             <td>{{rate.rate}}</td>
+            <td>
+                <a href="{{url_for('update_rates', from_currency=rate.from_currency, to_currency=rate.to_currency)}}">Update</a>
+            </td>>
         </tr>
         {% endfor %}
 
