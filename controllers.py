@@ -1,8 +1,8 @@
-from flask import render_template, make_response, jsonify, request, redirect
+from flask import render_template, make_response, jsonify, request, redirect, url_for
 import xmltodict
 from models import CurrencyRate, ApiLog
 import api
-
+import datetime
 
 class BaseController:
 	def __init__(self):
@@ -85,3 +85,27 @@ class ViewLogs(BaseController):
 		page = int(self.request.args.get("page", 1))
 		logs = ApiLog.select().paginate(page, 10).order_by(ApiLog.id.desc())
 		return render_template("logs.html", logs=logs)
+
+
+class EditRate(BaseController):
+
+	def _call(self, from_currency, to_currency):
+		if self.request.method == 'GET'	:
+			return render_template("rate_edit.html", 
+							from_currency=from_currency, 
+							to_currency=to_currency)
+		#  POST
+		print(request.form)
+		print(self.request.form)
+		if "new_rate" not in self.request.form:
+			raise Exception("new_rate parameter is required")
+
+		if not self.request.form["new_rate"]:
+		 	raise Exception("new_rate must not be empty")
+
+		upd_count = (CurrencyRate.update({CurrencyRate.rate: float(self.request.form["new_rate"]),
+		 								   CurrencyRate.dt_updated: datetime.datetime.now()}).where(
+		 								     CurrencyRate.from_currency == from_currency,
+		 								     CurrencyRate.to_currency == to_currency).execute())
+		print("Update count: ", upd_count)
+		return redirect(url_for('view_all_rates'))
